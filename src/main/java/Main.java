@@ -135,13 +135,11 @@ public class Main {
     public static boolean isUserPremium(){
         if(profile==null) return false;
         if(profile.getPremiumUntil() == null) return false;
-        System.out.println(profile.getPremiumUntil());
         return new Date().before(getTime(profile.getPremiumUntil()));
     }
 
     public static InlineResponse2003 profile;
     static void showProfile(){
-        System.out.println("=================================");
         if(profile==null){
             System.out.println("null");
         }else{
@@ -149,6 +147,7 @@ public class Main {
             System.out.println("premium until: " + (isUserPremium() ? profile.getPremiumUntil():"not premium"));
         }
         System.out.println("=================================");
+
     };
     public static void profile(){
         Scanner input = new Scanner(System.in);
@@ -170,22 +169,22 @@ public class Main {
     static void showTracks(Tracks tracks, String startingString){
         for(Track track: tracks){
             if(!isUserPremium() && track.isIsPremium()) continue;
-            System.out.println(startingString + "=================================");
             System.out.println(startingString + "id :" + track.getId());
             System.out.println(startingString + "name :" + track.getName());
             System.out.println(startingString + "artist :" + track.getArtist());
             System.out.println(startingString + "isPremium :" + track.isIsPremium());
+            System.out.println(startingString + "===============================================");
         }
     }
 
     static void showTracks(List<Track> tracks, String startingString){
         for(Track track: tracks){
             if(!isUserPremium() && track.isIsPremium()) continue;
-            System.out.println(startingString + "=================================");
             System.out.println(startingString + "id :" + track.getId());
             System.out.println(startingString + "name :" + track.getName());
             System.out.println(startingString + "artist :" + track.getArtist());
             System.out.println(startingString + "isPremium :" + track.isIsPremium());
+            System.out.println(startingString + "===============================================");
         }
     }
 
@@ -206,10 +205,10 @@ public class Main {
 
     public static void showPlaylists(Playlists playlists){
         for (Playlist playlist: playlists){
-            System.out.println("*******************************");
             System.out.println("playlist id: " + playlist.getId());
             System.out.println("playlist name: " + playlist.getName());
             System.out.println("playlist tracks: ");
+            System.out.println("*******************************");
             showTracks(playlist.getTracks(), "\t");
         }
     }
@@ -305,10 +304,26 @@ public class Main {
         }
     }
 
+    public static void upgradeToPremium(){
+        try {
+            InlineResponse2005 upgradeResponse = usersApi.upgradeToPremium();
+            usersApi.getProfileInfo().setPremiumUntil(upgradeResponse.getPremiumUntil());
+            System.out.println("Congrats! now you are premium :)");
+        } catch (ApiException apiException) {
+            String response = apiException.getResponseBody();
+            if(response.contains("try again")){
+                System.out.println("try again! maybe this time you'll be lucky!");
+            }
+        }
+        userMenuProcess();
+    }
+
 
     public static void userMenuProcess() {
         Scanner input = new Scanner(System.in);
-        System.out.println("1-Profile\n2-Tracks\n3-Playlists\n4-Make a playlist\n5-Delete a playlist");
+        System.out.println("1-Profile\n2-Tracks\n3-Playlists\n4-Make a playlist\n5-Delete a playlist\n6-Add track to a playlist\n7-Remove track from a playlist\n8-Upgrade to premium");
+        System.out.println("===============================================");
+        System.out.print("-> ");
         int choice = input.nextInt();
         switch (choice){
             case 1: profile(); break;
@@ -318,6 +333,7 @@ public class Main {
             case 5: deletePlaylist(); break;
             case 6: addTrackToPlaylist(); break;
             case 7: removeTrackFromPlaylist(); break;
+            case 8: upgradeToPremium(); break;
         }
     }
 
