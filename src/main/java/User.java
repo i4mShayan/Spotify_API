@@ -8,4 +8,10 @@ public class User {
         this.username = username;
         this.password = password;
     }
+
+    public User(String username, String password, String token) {
+        this.username = username;
+        this.password = password;
+        this.token=token;
+    }
 }

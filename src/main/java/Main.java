@@ -6,10 +6,12 @@ import io.swagger.client.api.DefaultApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.auth.OAuth;
-import io.swagger.client.model.AuthLoginBody;
-import io.swagger.client.model.AuthSignupBody;
-import io.swagger.client.model.InlineResponse2001;
+import io.swagger.client.model.*;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.Scanner;
 
 public class Main {
@@ -20,7 +22,6 @@ public class Main {
     public static UsersApi usersApi;
     public static User currentUser;
     public static long start = 0;
-    public static String tracks;
     public static boolean isFirstCall = true;
 
     public static void authAPIKey() {
@@ -42,6 +43,19 @@ public class Main {
         }
     }
 
+    public static boolean canRequestServer(){
+        long currentTime = System.currentTimeMillis() / 1000;
+        return currentTime - start > 20 || isFirstCall;
+    }
+
+    public static boolean canRequestServerThenDoIt(){
+        long currentTime = System.currentTimeMillis() / 1000;
+        boolean ans=currentTime - start > 20 || isFirstCall;
+        isFirstCall=false;
+        return ans;
+    }
+
+
     public static void loginProcess() {
         Scanner input = new Scanner(System.in);
         System.out.println("Enter username");
@@ -55,20 +69,16 @@ public class Main {
             authLoginBody.setUsername(username);
             authLoginBody.setPassword(password);
             token = (authApi.login(authLoginBody).getToken());
-            currentUser = new User(username,password);
-            System.out.println("You Successfully logged in");
-            currentUser.token = token;
+            currentUser = new User(username,password,token);
             defaultClient.setAccessToken(currentUser.token);
             OAuth bearerAuth = (OAuth) defaultClient.getAuthentication("bearerAuth");
             bearerAuth.setAccessToken(currentUser.token);
-
+            System.out.println("You Successfully logged in");
             userMenuProcess();
-            currentUser = new User(username, password);
-            currentUser.token = token;
         } catch (ApiException apiException) {
             String errorResponse = apiException.getResponseBody();
-            System.out.println(errorResponse);
             if (errorResponse.contains("invalid username or password")) {
+                System.err.println("invalid username or password");
                 loginProcess();
             }
         }
@@ -80,20 +90,26 @@ public class Main {
         String username = input.next();
         System.out.println("Enter password");
         String password = input.next();
-        System.out.println(Convertor.doesStringMatchWith(password, "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$"));
         if(Convertor.doesStringMatchWith(password, "^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9]).{8,}$")){
             try {
                 AuthSignupBody authSignupBody = new AuthSignupBody();
-                authSignupBody.setUsername("admin");
-                authSignupBody.setPassword("1234@Sa!");
-                System.out.println(authApi.signUp(authSignupBody));
+                authSignupBody.setUsername(username);
+                authSignupBody.setPassword(password);
+                String token = (authApi.signUp(authSignupBody).getToken());
+                currentUser = new User(username,password,token);
+                defaultClient.setAccessToken(currentUser.token);
+                OAuth bearerAuth = (OAuth) defaultClient.getAuthentication("bearerAuth");
+                bearerAuth.setAccessToken(currentUser.token);
+                System.out.println("You Successfully signed in");
+                userMenuProcess();
             } catch (ApiException apiException) {
                 String errorResponse = apiException.getResponseBody();
-                System.err.println(errorResponse);
                 if (errorResponse.contains("no username provided")) {
+                    System.err.println("no username provided");
                     signUpProcess();
                 }
                 else if(errorResponse.contains("username already taken")){
+                    System.err.println("username already taken");
                     signUpProcess();
                 }
             }
@@ -105,40 +121,81 @@ public class Main {
     }
 
 
+    static Date getTime(String time){
+        Date date = null;
+        try {
+            date = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(time);
+        } catch (ParseException e) {
+            e.printStackTrace();
+        }
+        return date;
+    }
+
+    public static boolean isUserPremium(){
+        if(profile==null) return false;
+        if(profile.getPremiumUntil() == null) return false;
+        System.out.println(profile.getPremiumUntil());
+        return new Date().before(getTime(profile.getPremiumUntil()));
+    }
+
+    public static InlineResponse2003 profile;
+    static void showProfile(){
+        System.out.println("=================================");
+        if(profile==null){
+            System.out.println("null");
+        }else{
+            System.out.println("username: " + profile.getUsername());
+            System.out.println("premium until: " + (isUserPremium() ? profile.getPremiumUntil():"not premium"));
+        }
+        System.out.println("=================================");
+    };
+    public static void profile(){
+        Scanner input = new Scanner(System.in);
+        if (canRequestServerThenDoIt()) {
+            try {
+                profile=usersApi.getProfileInfo();
+                start = System.currentTimeMillis() / 1000;
+                showProfile();
+                userMenuProcess();
+            } catch (ApiException apiException) {
+                System.out.println(apiException.getResponseBody());
+            }
+        } else {
+            showProfile();
+        }
+    }
+
+    public static Tracks tracks;
+    static void showTracks(){
+        for(Track track: tracks){
+            if(isUserPremium() != track.isIsPremium()) continue;
+            System.out.println("=================================");
+            System.out.println("name :" + track.getName());
+            System.out.println("artist :" + track.getArtist());
+            System.out.println("name :" + track.isIsPremium());
+        }
+    };
+    public static void tracks(){
+        if (canRequestServerThenDoIt()) {
+            try {
+                tracks = usersApi.getTracksInfo();
+                showTracks();
+                start = System.currentTimeMillis() / 1000;
+            } catch (ApiException apiException) {
+                System.out.println(apiException.getResponseBody());
+            }
+        } else {
+            showTracks();
+        }
+    }
+
     public static void userMenuProcess() {
         Scanner input = new Scanner(System.in);
         System.out.println("1-Profile\n2-Tracks");
         int choice = input.nextInt();
-        if (choice == 1) {
-            long currentTime = System.currentTimeMillis() / 1000;
-            if (currentTime - start > 20 || isFirstCall) {
-                try {
-                    System.out.println(usersApi.getProfileInfo().toString());
-                    start = System.currentTimeMillis() / 1000;
-                    int exit = input.nextInt();
-                    isFirstCall = false;
-                    userMenuProcess();
-                } catch (ApiException apiException) {
-                    System.out.println(apiException.getResponseBody());
-                    isFirstCall = false;
-                }
-            } else {
-                //cached data
-                System.out.println();
-            }
-        } else if (choice == 2) {
-            long currentTime = System.currentTimeMillis() / 1000;
-            if (currentTime - start > 20) {
-                try {
-                    tracks = usersApi.getTracksInfo().toString();
-                    System.out.println(tracks);
-                    start = System.currentTimeMillis() / 1000;
-                } catch (ApiException apiException) {
-                    System.out.println(apiException.getResponseBody());
-                }
-            } else {
-                System.out.println(tracks);
-            }
+        switch (choice){
+            case 1: profile(); break;
+            case 2: tracks(); break;
         }
     }
 
