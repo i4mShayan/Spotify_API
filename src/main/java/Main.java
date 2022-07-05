@@ -3,6 +3,7 @@ import io.swagger.client.ApiException;
 import io.swagger.client.Configuration;
 import io.swagger.client.api.AuthApi;
 import io.swagger.client.api.DefaultApi;
+import io.swagger.client.api.PremiumUsersApi;
 import io.swagger.client.api.UsersApi;
 import io.swagger.client.auth.ApiKeyAuth;
 import io.swagger.client.auth.OAuth;
@@ -217,6 +218,7 @@ public class Main {
         if(canRequestServerThenDoIt()){
             try {
                 playlists=usersApi.getPlaylistsInfo();
+                start = System.currentTimeMillis() / 1000;
                 showPlaylists(playlists);
             } catch (ApiException apiException) {
                 System.out.println(apiException.getResponseBody());
@@ -305,23 +307,51 @@ public class Main {
     }
 
     public static void upgradeToPremium(){
-        try {
-            InlineResponse2005 upgradeResponse = usersApi.upgradeToPremium();
-            usersApi.getProfileInfo().setPremiumUntil(upgradeResponse.getPremiumUntil());
-            System.out.println("Congrats! now you are premium :)");
-        } catch (ApiException apiException) {
-            String response = apiException.getResponseBody();
-            if(response.contains("try again")){
-                System.out.println("try again! maybe this time you'll be lucky!");
+        if(isUserPremium()) System.out.println("You are already a premium user!");
+        else{
+            try {
+                InlineResponse2005 upgradeResponse = usersApi.upgradeToPremium();
+                usersApi.getProfileInfo().setPremiumUntil(upgradeResponse.getPremiumUntil());
+                System.out.println("Congrats! now you are premium :)");
+            } catch (ApiException apiException) {
+                String response = apiException.getResponseBody();
+                if(response.contains("try again")){
+                    System.out.println("try again! maybe this time you'll be lucky!");
+                }
             }
         }
+        System.out.println("===============================================");
         userMenuProcess();
     }
 
 
+
+    public static void getFriends(){
+        if(isUserPremium()){
+            if(canRequestServerThenDoIt()){
+                PremiumUsersApi premiumUsersApi = new PremiumUsersApi(defaultClient);
+                try {
+                    List<String> friends = premiumUsersApi.getFriends();
+                    start = System.currentTimeMillis() / 1000;
+                    System.out.println("Friends list: ");
+                    System.out.println("*******************************");
+                    for(String friend: friends){
+                        System.out.println("- " + friend);
+                    }
+                } catch (ApiException apiException) {
+                    System.out.println(apiException.getResponseBody());
+                }
+            }
+        }else{
+            System.out.println("You are not a premium user!");
+        }
+        System.out.println("===============================================");
+        userMenuProcess();
+    }
+
     public static void userMenuProcess() {
         Scanner input = new Scanner(System.in);
-        System.out.println("1-Profile\n2-Tracks\n3-Playlists\n4-Make a playlist\n5-Delete a playlist\n6-Add track to a playlist\n7-Remove track from a playlist\n8-Upgrade to premium");
+        System.out.println("1-Profile\n2-Tracks\n3-Playlists\n4-Make a playlist\n5-Delete a playlist\n6-Add track to a playlist\n7-Remove track from a playlist\n8-Upgrade to premium\n9-Friends list");
         System.out.println("===============================================");
         System.out.print("-> ");
         int choice = input.nextInt();
@@ -334,6 +364,7 @@ public class Main {
             case 6: addTrackToPlaylist(); break;
             case 7: removeTrackFromPlaylist(); break;
             case 8: upgradeToPremium(); break;
+            case 9: getFriends(); break;
         }
     }
 
