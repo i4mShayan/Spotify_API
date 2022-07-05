@@ -12,6 +12,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -166,39 +167,159 @@ public class Main {
     }
 
     public static Tracks tracks;
-    static void showTracks(){
+    static void showTracks(Tracks tracks, String startingString){
         for(Track track: tracks){
-            if(isUserPremium() != track.isIsPremium()) continue;
-            System.out.println("=================================");
-            System.out.println("name :" + track.getName());
-            System.out.println("artist :" + track.getArtist());
-            System.out.println("name :" + track.isIsPremium());
+            if(!isUserPremium() && track.isIsPremium()) continue;
+            System.out.println(startingString + "=================================");
+            System.out.println(startingString + "id :" + track.getId());
+            System.out.println(startingString + "name :" + track.getName());
+            System.out.println(startingString + "artist :" + track.getArtist());
+            System.out.println(startingString + "isPremium :" + track.isIsPremium());
         }
-    };
+    }
+
+    static void showTracks(List<Track> tracks, String startingString){
+        for(Track track: tracks){
+            if(!isUserPremium() && track.isIsPremium()) continue;
+            System.out.println(startingString + "=================================");
+            System.out.println(startingString + "id :" + track.getId());
+            System.out.println(startingString + "name :" + track.getName());
+            System.out.println(startingString + "artist :" + track.getArtist());
+            System.out.println(startingString + "isPremium :" + track.isIsPremium());
+        }
+    }
+
     public static void tracks(){
         if (canRequestServerThenDoIt()) {
             try {
                 tracks = usersApi.getTracksInfo();
-                showTracks();
+                showTracks(tracks, "");
                 start = System.currentTimeMillis() / 1000;
             } catch (ApiException apiException) {
                 System.out.println(apiException.getResponseBody());
             }
         } else {
-            showTracks();
+            showTracks(tracks, "");
         }
     }
 
+
+    public static void showPlaylists(Playlists playlists){
+        for (Playlist playlist: playlists){
+            System.out.println("*******************************");
+            System.out.println("playlist id: " + playlist.getId());
+            System.out.println("playlist name: " + playlist.getName());
+            System.out.println("playlist tracks: ");
+            showTracks(playlist.getTracks(), "\t");
+        }
+    }
+    public static Playlists playlists;
+    public static void playlists() {
+        if(canRequestServerThenDoIt()){
+            try {
+                playlists=usersApi.getPlaylistsInfo();
+                showPlaylists(playlists);
+            } catch (ApiException apiException) {
+                System.out.println(apiException.getResponseBody());
+            }
+        }else{
+            showPlaylists(playlists);
+        }
+    }
+
+
+    public static void makeNewPlaylist(){
+        Scanner in=new Scanner(System.in);
+        System.out.println("Enter playlist name: ");
+        String playlistName=in.next();
+        try {
+            PlaylistsBody playlistsBody = new PlaylistsBody();
+            playlistsBody.setName(playlistName);
+            usersApi.createPlaylist(playlistsBody).getId();
+            System.out.println("Playlist successfully added :)");
+        } catch (ApiException apiException) {
+            if(apiException.getResponseBody().contains("no name provided")){
+                System.out.println("no name provided");
+            }
+            makeNewPlaylist();
+        }
+    }
+
+    public static void deletePlaylist(){
+        Scanner in=new Scanner(System.in);
+        System.out.println("Enter playlist id you want to delete: ");
+        int playlistID=in.nextInt();
+        try {
+            usersApi.deletePlaylist(playlistID);
+            System.out.println("Playlist successfully deleted :)");
+        } catch (ApiException apiException) {
+            String response=apiException.getResponseBody();
+            if(response.contains("no playlist_id provided")){
+                System.out.println("no playlist_id provided");
+            }else if(response.contains("playlist not found")){
+                System.out.println("playlist not found");
+            }
+            deletePlaylist();
+        }
+    }
+
+    public static void addTrackToPlaylist(){
+        Scanner in=new Scanner(System.in);
+        System.out.println("Enter playlist id you want to add track to: ");
+        int playlistID=in.nextInt();
+        System.out.println("Enter track id you want to add: ");
+        String trackID=in.next();
+        try {
+            usersApi.addTrackToPlaylist(playlistID, trackID);
+            System.out.println("Track successfully added to the playlist :)");
+        } catch (ApiException apiException) {
+            String response=apiException.getResponseBody();
+            if(response.contains("no playlist_id provided")){
+                System.out.println("no playlist_id provided");
+            }else if(response.contains("track not found")){
+                System.out.println("track not found");
+            }else if(response.contains("track already exists in playlist")){
+                System.out.println("track already exists in playlist");
+            }
+            addTrackToPlaylist();
+        }
+    }
+
+    public static void removeTrackFromPlaylist(){
+        Scanner in=new Scanner(System.in);
+        System.out.println("Enter playlist id you want to add track to: ");
+        int playlistID=in.nextInt();
+        System.out.println("Enter track id you want to add: ");
+        String trackID=in.next();
+        try {
+            usersApi.removeTrackFromPlaylist(playlistID, trackID);
+            System.out.println("Track successfully removed from the playlist :)");
+        } catch (ApiException apiException) {
+            String response=apiException.getResponseBody();
+            if(response.contains("no playlist_id provided")){
+                System.out.println("no playlist_id provided");
+            }else if(response.contains("track does not exist in playlist")){
+                System.out.println("track does not exist in playlist");
+            }
+            removeTrackFromPlaylist();
+        }
+    }
+
+
     public static void userMenuProcess() {
         Scanner input = new Scanner(System.in);
-        System.out.println("1-Profile\n2-Tracks");
+        System.out.println("1-Profile\n2-Tracks\n3-Playlists\n4-Make a playlist\n5-Delete a playlist");
         int choice = input.nextInt();
         switch (choice){
             case 1: profile(); break;
             case 2: tracks(); break;
+            case 3: playlists(); break;
+            case 4: makeNewPlaylist(); break;
+            case 5: deletePlaylist(); break;
+            case 6: addTrackToPlaylist(); break;
+            case 7: removeTrackFromPlaylist(); break;
         }
     }
-
 
     public static void main(String[] args) {
         authAPIKey();
@@ -210,6 +331,5 @@ public class Main {
             case 1: loginProcess(); break;
             case 2: signUpProcess(); break;
         }
-
     }
 }

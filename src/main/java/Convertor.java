@@ -17,5 +17,4 @@ public class Convertor {
         Matcher matcher = pattern.matcher(str);
         return matcher.find();
     }
-
 }

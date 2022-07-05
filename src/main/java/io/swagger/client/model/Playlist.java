@@ -1,6 +1,6 @@
 /*
  * Spotify
- * Simple API for advanced programming course, Dr. Mojtaba Vahidi Asl, Fall 1400 
+ * Simple API for advanced programming course, Dr. Mojtaba Vahidi Asl, Fall 1400
  *
  * OpenAPI spec version: 1.0.0
  * Contact: nima.heydari79@yahoo.com
@@ -44,10 +44,10 @@ public class Playlist {
     return this;
   }
 
-   /**
+  /**
    * Get id
    * @return id
-  **/
+   **/
   @Schema(required = true, description = "")
   public String getId() {
     return id;
@@ -62,10 +62,10 @@ public class Playlist {
     return this;
   }
 
-   /**
+  /**
    * Get name
    * @return name
-  **/
+   **/
   @Schema(required = true, description = "")
   public String getName() {
     return name;
@@ -85,10 +85,10 @@ public class Playlist {
     return this;
   }
 
-   /**
+  /**
    * Get tracks
    * @return tracks
-  **/
+   **/
   @Schema(required = true, description = "")
   public List<Track> getTracks() {
     return tracks;
@@ -109,8 +109,8 @@ public class Playlist {
     }
     Playlist playlist = (Playlist) o;
     return Objects.equals(this.id, playlist.id) &&
-        Objects.equals(this.name, playlist.name) &&
-        Objects.equals(this.tracks, playlist.tracks);
+            Objects.equals(this.name, playlist.name) &&
+            Objects.equals(this.tracks, playlist.tracks);
   }
 
   @Override
@@ -123,7 +123,7 @@ public class Playlist {
   public String toString() {
     StringBuilder sb = new StringBuilder();
     sb.append("class Playlist {\n");
-    
+
     sb.append("    id: ").append(toIndentedString(id)).append("\n");
     sb.append("    name: ").append(toIndentedString(name)).append("\n");
     sb.append("    tracks: ").append(toIndentedString(tracks)).append("\n");
