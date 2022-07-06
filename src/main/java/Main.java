@@ -104,6 +104,7 @@ public class Main {
         } catch (ApiException apiException) {
             String errorResponse = apiException.getResponseBody();
             if (errorResponse.contains("invalid username or password")) {
+                System.out.println("===============================================");
                 System.out.println(RED + "invalid username or password" + RESET);
                 System.out.println("===============================================");
                 loginProcess();
@@ -134,20 +135,25 @@ public class Main {
             } catch (ApiException apiException) {
                 String errorResponse = apiException.getResponseBody();
                 if (errorResponse.contains("no username provided")) {
+                    System.out.println("===============================================");
                     System.out.println(RED + "no username provided" + RESET);
+                    System.out.println("===============================================");
                     signUpProcess();
                 }
                 else if(errorResponse.contains("username already taken")){
+                    System.out.println("===============================================");
                     System.out.println(RED + "username already taken" + RESET);
+                    System.out.println("===============================================");
                     signUpProcess();
                 }
             }
         }
         else{
+            System.out.println("===============================================");
             System.out.println(RED + "password length must be at least 8 and include uppercase, lowercase and number!" + RESET);
+            System.out.println("===============================================");
             signUpProcess();
         }
-        System.out.println("===============================================");
     }
 
 
